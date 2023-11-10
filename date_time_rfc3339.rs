@@ -1,6 +1,7 @@
 use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value};
 pub struct DateTimeRfc3339(chrono::DateTime<chrono::FixedOffset>);
 
+#[allow(dead_code)]
 impl DateTimeRfc3339 {
     pub fn new(t: chrono::DateTime<chrono::FixedOffset>) -> DateTimeRfc3339 {
         DateTimeRfc3339(t)
