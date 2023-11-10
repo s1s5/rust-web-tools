@@ -46,6 +46,9 @@ pub fn setup(
             )
             .with(tracing_subscriber::EnvFilter::from_default_env());
 
+        #[cfg(all(feature = "with-sentry"))]
+        let builder = builder.with(sentry_tracing::layer());
+
         // TODO: もっときれいにかけないものか
         if let Some(tracer) = tracer.clone() {
             builder
