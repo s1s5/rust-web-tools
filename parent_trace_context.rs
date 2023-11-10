@@ -5,19 +5,19 @@ const TRACEPARENT_HEADER: &str = "traceparent";
 const TRACESTATE_HEADER: &str = "tracestate";
 
 #[derive(Debug, Clone)]
-pub struct Trace {
+pub struct ParentTraceContext {
     headers: HashMap<&'static str, Option<String>>,
 }
 
 #[async_trait]
-impl<S> FromRequestParts<S> for Trace
+impl<S> FromRequestParts<S> for ParentTraceContext
 where
     S: Send + Sync,
 {
     type Rejection = Response;
 
     async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
-        Ok(Trace {
+        Ok(ParentTraceContext {
             headers: HashMap::from_iter(
                 [
                     (
@@ -42,7 +42,13 @@ where
     }
 }
 
-impl opentelemetry::propagation::Extractor for Trace {
+impl ParentTraceContext {
+    pub fn get(&self) -> opentelemetry_api::Context {
+        opentelemetry::global::get_text_map_propagator(|prop| prop.extract(self))
+    }
+}
+
+impl opentelemetry::propagation::Extractor for ParentTraceContext {
     fn get(&self, key: &str) -> Option<&str> {
         self.headers
             .get(key)

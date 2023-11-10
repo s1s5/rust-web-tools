@@ -10,6 +10,9 @@ pub mod date_time_rfc3339;
 #[cfg(all(feature = "with-sea-orm"))]
 pub mod db;
 
+#[cfg(all(feature = "with-sea-orm"))]
+pub mod connection;
+
 #[cfg(feature = "with-axum")]
 pub mod error;
 
@@ -17,7 +20,10 @@ pub mod error;
 pub mod request_id;
 
 #[cfg(feature = "with-opentelemetry")]
-pub mod setup;
+pub mod setup_tracing;
 
 #[cfg(feature = "with-opentelemetry")]
-pub mod trace;
+pub mod parent_trace_context;
+
+#[cfg(feature = "with-axum")]
+pub mod server;

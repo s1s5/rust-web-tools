@@ -2,7 +2,7 @@ use opentelemetry_otlp::WithExportConfig;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-pub fn setup_tracing_and_opentelemetry(
+pub fn setup(
     service_name: &str,
     simple: bool,
 ) -> anyhow::Result<Option<opentelemetry::sdk::trace::Tracer>> {
