@@ -43,7 +43,7 @@ where
 }
 
 impl ParentTraceContext {
-    pub fn get(&self) -> opentelemetry_api::Context {
+    pub fn get(&self) -> opentelemetry::Context {
         opentelemetry::global::get_text_map_propagator(|prop| prop.extract(self))
     }
 }
