@@ -29,5 +29,10 @@ pub async fn run(router: Router) -> anyhow::Result<()> {
 
     info!("server shutdown");
 
+    #[cfg(all(feature = "with-sentry"))]
+    if let Some(client) = sentry::Hub::current().client() {
+        client.close(Some(std::time::Duration::from_secs(2)));
+    }
+
     Ok(())
 }
