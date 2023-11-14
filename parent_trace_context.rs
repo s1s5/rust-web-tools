@@ -58,6 +58,6 @@ impl opentelemetry::propagation::Extractor for ParentTraceContext {
     }
 
     fn keys(&self) -> Vec<&str> {
-        self.headers.keys().map(|x| *x).collect::<Vec<_>>()
+        self.headers.keys().copied().collect()
     }
 }

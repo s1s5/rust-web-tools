@@ -4,13 +4,13 @@ pub mod access_token;
 #[cfg(all(feature = "with-graphql", feature = "with-sentry"))]
 pub mod async_graphql_sentry_extension;
 
-#[cfg(all(feature = "with-graphql"))]
+#[cfg(feature = "with-graphql")]
 pub mod date_time_rfc3339;
 
-#[cfg(all(feature = "with-sea-orm"))]
+#[cfg(feature = "with-sea-orm")]
 pub mod db;
 
-#[cfg(all(feature = "with-sea-orm"))]
+#[cfg(feature = "with-sea-orm")]
 pub mod connection;
 
 #[cfg(feature = "with-axum")]
