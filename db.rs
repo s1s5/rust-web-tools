@@ -27,10 +27,10 @@ impl Database {
     }
 }
 
-pub fn get_data_loader_from_ctx(ctx: Context<'_>) -> &'_ DataLoader<Database> {
+pub fn get_data_loader_from_ctx<'a>(ctx: &Context<'a>) -> &'a DataLoader<Database> {
     ctx.data_unchecked::<DataLoader<Database>>()
 }
 
-pub fn get_db_from_ctx(ctx: Context<'_>) -> &'_ DatabaseConnection {
+pub fn get_db_from_ctx<'a>(ctx: &Context<'a>) -> &'a DatabaseConnection {
     get_data_loader_from_ctx(ctx).loader().get_connection()
 }
