@@ -34,5 +34,8 @@ pub async fn run(router: Router) -> anyhow::Result<()> {
         client.close(Some(std::time::Duration::from_secs(2)));
     }
 
+    #[cfg(feature = "with-opentelemetry")]
+    opentelemetry::global::shutdown_tracer_provider();
+
     Ok(())
 }
