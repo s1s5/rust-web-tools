@@ -24,7 +24,12 @@ pub fn setup(
                     .with_resource(opentelemetry::sdk::Resource::new(vec![
                         opentelemetry::KeyValue::new("service.name", service_name.to_string()),
                     ])),
+            )
+            .with_batch_config(
+                opentelemetry::sdk::trace::BatchConfig::default()
+                    .with_scheduled_delay(std::time::Duration::from_secs(10)),
             );
+
         let tracer = if simple {
             pipeline.install_simple()
         } else {
