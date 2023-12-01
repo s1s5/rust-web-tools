@@ -9,9 +9,11 @@ pub struct Database {
 
 impl Database {
     pub async fn new_from_env() -> Result<Self> {
-        let db = sea_orm::Database::connect(std::env::var("DATABASE_URL").unwrap())
-            .await
-            .expect("Could not connect to database");
+        let db = sea_orm::Database::connect(
+            std::env::var("DATABASE_URL").expect("env 'DATABASE_URL is not set'"),
+        )
+        .await
+        .expect("Could not connect to database");
         Ok(Self {
             connection: Arc::new(db),
         })
