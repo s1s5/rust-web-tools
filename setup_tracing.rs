@@ -2,11 +2,57 @@ use opentelemetry_otlp::WithExportConfig;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-pub fn setup(
-    service_name: &str,
-    simple: bool,
-) -> anyhow::Result<Option<opentelemetry::sdk::trace::Tracer>> {
+#[cfg(feature = "with-graphql")]
+use super::async_graphql_sentry_extension;
+
+#[cfg(feature = "with-graphql")]
+use async_graphql::SchemaBuilder;
+
+pub struct SetupGuard {
+    sentry_guard: Option<sentry::ClientInitGuard>,
+    tracer: Option<opentelemetry::sdk::trace::Tracer>,
+}
+
+impl SetupGuard {
+    #[cfg(feature = "with-graphql")]
+    pub fn add_extension<Q, M, S>(
+        &self,
+        schema_builder: SchemaBuilder<Q, M, S>,
+    ) -> SchemaBuilder<Q, M, S> {
+        let schema_builder = if self.sentry_guard.is_some() {
+            schema_builder.extension(async_graphql_sentry_extension::Sentry)
+        } else {
+            schema_builder
+        };
+        if let Some(tracer) = self.tracer.clone() {
+            schema_builder.extension(async_graphql::extensions::OpenTelemetry::new(tracer))
+        } else {
+            schema_builder
+        }
+    }
+}
+
+impl Drop for SetupGuard {
+    fn drop(&mut self) {
+        self.sentry_guard.take();
+        self.tracer.take();
+
+        if let Some(client) = sentry::Hub::current().client() {
+            client.close(Some(std::time::Duration::from_secs(2)));
+        }
+
+        opentelemetry::global::shutdown_tracer_provider();
+    }
+}
+
+pub fn setup() -> anyhow::Result<SetupGuard> {
     let tracer = if let Ok(otel_exporter) = std::env::var("OTEL_EXPORTER") {
+        let service_name = if let Ok(service_name) = std::env::var("OTEL_SERVICE_NAME") {
+            service_name
+        } else {
+            std::env::var("HOSTNAME").unwrap_or("not-set".to_string())
+        };
+
         opentelemetry::global::set_text_map_propagator(
             opentelemetry::sdk::propagation::TraceContextPropagator::new(),
         );
@@ -30,11 +76,12 @@ pub fn setup(
                     .with_scheduled_delay(std::time::Duration::from_secs(10)),
             );
 
-        let tracer = if simple {
-            pipeline.install_simple()
-        } else {
-            pipeline.install_batch(opentelemetry::runtime::Tokio)
-        }?;
+        #[cfg(debug_assertions)]
+        let tracer = pipeline.install_simple()?;
+
+        #[cfg(not(debug_assertions))]
+        let tracer = pipeline.install_batch(opentelemetry::runtime::Tokio)?;
+
         Some(tracer)
     } else {
         None
@@ -63,5 +110,12 @@ pub fn setup(
             builder.try_init()?;
         }
     }
-    Ok(tracer)
+    Ok(SetupGuard {
+        sentry_guard: if let Ok(sentry_dsn) = std::env::var("SENTRY_DSN") {
+            Some(sentry::init(sentry_dsn))
+        } else {
+            None
+        },
+        tracer,
+    })
 }

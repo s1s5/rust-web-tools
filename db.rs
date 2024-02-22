@@ -1,6 +1,8 @@
-use async_graphql::{dataloader::DataLoader, Context};
 use sea_orm::DatabaseConnection;
 use std::sync::Arc;
+
+use async_graphql::{dataloader::DataLoader, Context};
+
 type Result<T> = anyhow::Result<T>;
 
 pub struct Database {
@@ -8,19 +10,15 @@ pub struct Database {
 }
 
 impl Database {
-    pub async fn new_from_env() -> Result<Self> {
-        let db = sea_orm::Database::connect(
-            std::env::var("DATABASE_URL").expect("env 'DATABASE_URL is not set'"),
-        )
-        .await
-        .expect("Could not connect to database");
-        Ok(Self {
-            connection: Arc::new(db),
-        })
-    }
-
-    pub async fn new(connection: Arc<DatabaseConnection>) -> Self {
-        Database { connection }
+    pub async fn new_from_env() -> Result<DataLoader<Self>> {
+        Ok(DataLoader::new(
+            Self {
+                connection: Arc::new(
+                    sea_orm::Database::connect(std::env::var("DATABASE_URL")?).await?,
+                ),
+            },
+            tokio::task::spawn,
+        ))
     }
 
     #[inline]

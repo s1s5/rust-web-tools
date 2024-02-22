@@ -3,8 +3,8 @@ use std::net::SocketAddr;
 use axum::Router;
 use tracing::{debug, info};
 
-pub async fn run(router: Router) -> anyhow::Result<()> {
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
+pub async fn run(router: Router, port: Option<u16>) -> anyhow::Result<()> {
+    let addr = SocketAddr::from(([0, 0, 0, 0], port.unwrap_or(8000)));
     let server = axum::Server::bind(&addr).serve(router.into_make_service());
 
     info!("server listening {:?}", addr);

@@ -1,3 +1,7 @@
+// TODO:
+// https://relay.dev/graphql/connections.htm
+// をみて作成し直し
+
 use sea_orm::{
     DatabaseConnection, DbErr, EntityTrait, FromQueryResult, PaginatorTrait, QuerySelect, Select,
 };
