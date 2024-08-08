@@ -4,6 +4,9 @@ pub mod async_graphql_sentry_extension;
 #[cfg(feature = "with-graphql")]
 pub mod date_time_rfc3339;
 
+#[cfg(feature = "with-graphql")]
+pub mod date;
+
 #[cfg(all(feature = "with-sea-orm", feature = "with-graphql"))]
 pub mod db;
 
