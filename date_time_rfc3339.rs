@@ -5,10 +5,14 @@ use serde::Serialize;
 #[derive(Serialize)]
 pub struct DateTimeRfc3339(#[serde(with = "ts_seconds")] chrono::DateTime<chrono::Utc>);
 
-#[allow(dead_code)]
 impl DateTimeRfc3339 {
-    pub fn new(t: chrono::DateTime<chrono::Utc>) -> DateTimeRfc3339 {
+    pub fn new(t: chrono::DateTime<chrono::Utc>) -> Self {
         DateTimeRfc3339(t)
+    }
+    pub fn from_timestamp(ts: i64) -> anyhow::Result<Self> {
+        Ok(Self(chrono::DateTime::from_timestamp(ts, 0).ok_or(
+            anyhow::anyhow!("failed to convert date timestamp"),
+        )?))
     }
 }
 
