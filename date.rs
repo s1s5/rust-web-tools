@@ -3,7 +3,7 @@ use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct Date(#[serde(with = "date_serializer")] chrono::NaiveDate);
+pub struct Date(#[serde(with = "date_serializer")] pub chrono::NaiveDate);
 
 impl Date {
     pub fn new(t: chrono::NaiveDate) -> Date {
