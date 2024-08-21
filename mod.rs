@@ -23,3 +23,6 @@ pub mod parent_trace_context;
 
 #[cfg(feature = "with-axum")]
 pub mod server;
+
+#[cfg(feature = "with-graphql")]
+pub mod vec_for_input;
