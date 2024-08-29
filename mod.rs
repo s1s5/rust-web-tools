@@ -7,6 +7,9 @@ pub mod date_time_rfc3339;
 #[cfg(feature = "with-graphql")]
 pub mod date;
 
+#[cfg(feature = "with-graphql")]
+pub mod month;
+
 #[cfg(all(feature = "with-sea-orm", feature = "with-graphql"))]
 pub mod db;
 

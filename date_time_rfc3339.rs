@@ -2,7 +2,7 @@ use async_graphql::{InputValueError, InputValueResult, Scalar, ScalarType, Value
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Clone)]
 pub struct DateTimeRfc3339(
     #[serde(with = "datetime_serializer")] pub chrono::DateTime<chrono::Utc>,
 );
