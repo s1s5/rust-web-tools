@@ -25,3 +25,12 @@ pub struct MonthInput {
     pub year: i32,
     pub month: i32,
 }
+
+impl From<MonthInput> for Month {
+    fn from(value: MonthInput) -> Self {
+        Self {
+            year: value.year,
+            month: value.month,
+        }
+    }
+}
