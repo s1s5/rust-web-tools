@@ -1,32 +1,17 @@
-use std::net::SocketAddr;
-
 use axum::Router;
+use std::net::SocketAddr;
+use tokio::signal;
 use tracing::{debug, info};
 
 pub async fn run(router: Router, port: Option<u16>) -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port.unwrap_or(8000)));
-    let server = axum::Server::bind(&addr).serve(router.into_make_service());
-
     info!("server listening {:?}", addr);
 
-    server
-        .with_graceful_shutdown(async {
-            use tokio::signal::{
-                ctrl_c,
-                unix::{signal, SignalKind},
-            };
-
-            let mut sig_int = signal(SignalKind::interrupt()).unwrap();
-            let mut sig_term = signal(SignalKind::terminate()).unwrap();
-            tokio::select! {
-                _ = sig_int.recv() => debug!("SIGINT received"),
-                _ = sig_term.recv() => debug!("SIGTERM received"),
-                _ = ctrl_c() => debug!("'Ctrl C' received"),
-            }
-            debug!("gracefully shutting down");
-        })
-        .await?;
-
+    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    axum::serve(listener, router)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
     info!("server shutdown");
 
     #[cfg(feature = "with-sentry")]
@@ -38,4 +23,40 @@ pub async fn run(router: Router, port: Option<u16>) -> anyhow::Result<()> {
     opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    #[cfg(unix)]
+    let sig_int = async {
+        signal::unix::signal(signal::unix::SignalKind::interrupt())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let sig_int = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {debug!("'Ctrl C' received")},
+        _ = sig_int => {debug!("SIGINT received")},
+        _ = terminate => {debug!("SIGTERM received")},
+    }
 }
