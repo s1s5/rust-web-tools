@@ -34,3 +34,23 @@ impl From<MonthInput> for Month {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_serialize() -> anyhow::Result<()> {
+        let month = Month {
+            year: 2024,
+            month: 10,
+        };
+        let m_i32 = month.to_i32();
+        assert_eq!(m_i32, 24 * 12 + 10 - 1);
+        let d = Month::from_i32(m_i32);
+        assert_eq!(d.year, 2024);
+        assert_eq!(d.month, 10);
+
+        Ok(())
+    }
+}

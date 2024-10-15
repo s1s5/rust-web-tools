@@ -57,3 +57,35 @@ mod datetime_serializer {
             ))))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::*;
+
+    #[test]
+    fn test_serialize() -> anyhow::Result<()> {
+        let date = NaiveDate::from_ymd_opt(2024, 10, 15).unwrap();
+        let time = NaiveTime::from_hms_opt(14, 30, 0).unwrap();
+
+        let naive_datetime = date.and_time(time);
+
+        let datetime_utc: DateTime<Utc> =
+            DateTime::<Utc>::from_naive_utc_and_offset(naive_datetime, Utc);
+
+        let d = DateTimeRfc3339(datetime_utc);
+        let value = d.to_value();
+
+        match &value {
+            Value::String(s) => {
+                assert_eq!(s, "2024-10-15T14:30:00+00:00");
+            }
+            _ => {
+                panic!();
+            }
+        }
+        let parsed = DateTimeRfc3339::parse(value).unwrap();
+        assert_eq!(d, parsed);
+        Ok(())
+    }
+}
