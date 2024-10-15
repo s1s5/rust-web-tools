@@ -1,8 +1,9 @@
+use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-#[cfg(feature = "with-graphql")]
+#[cfg(all(feature = "with-graphql", feature = "with-sentry"))]
 use super::async_graphql_sentry_extension;
 
 #[cfg(feature = "with-graphql")]
@@ -10,7 +11,7 @@ use async_graphql::SchemaBuilder;
 
 pub struct SetupGuard {
     sentry_guard: Option<sentry::ClientInitGuard>,
-    tracer: Option<opentelemetry::sdk::trace::Tracer>,
+    provider: Option<opentelemetry_sdk::trace::TracerProvider>,
 }
 
 impl SetupGuard {
@@ -24,8 +25,10 @@ impl SetupGuard {
         } else {
             schema_builder
         };
-        if let Some(tracer) = self.tracer.clone() {
-            schema_builder.extension(async_graphql::extensions::OpenTelemetry::new(tracer))
+        if let Some(provider) = self.provider.as_ref() {
+            schema_builder.extension(async_graphql::extensions::OpenTelemetry::new(
+                provider.tracer("graphql"),
+            ))
         } else {
             schema_builder
         }
@@ -35,7 +38,7 @@ impl SetupGuard {
 impl Drop for SetupGuard {
     fn drop(&mut self) {
         self.sentry_guard.take();
-        self.tracer.take();
+        self.provider.take();
 
         if let Some(client) = sentry::Hub::current().client() {
             client.close(Some(std::time::Duration::from_secs(2)));
@@ -46,7 +49,7 @@ impl Drop for SetupGuard {
 }
 
 pub fn setup() -> anyhow::Result<SetupGuard> {
-    let tracer = if let Ok(otel_exporter) = std::env::var("OTEL_EXPORTER") {
+    let provider = if let Ok(otel_exporter) = std::env::var("OTEL_EXPORTER") {
         let service_name = if let Ok(service_name) = std::env::var("OTEL_SERVICE_NAME") {
             service_name
         } else {
@@ -54,35 +57,43 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
         };
 
         opentelemetry::global::set_text_map_propagator(
-            opentelemetry::sdk::propagation::TraceContextPropagator::new(),
+            opentelemetry_sdk::propagation::TraceContextPropagator::new(),
         );
+
         let pipeline = opentelemetry_otlp::new_pipeline()
             .tracing()
             .with_exporter(
                 opentelemetry_otlp::new_exporter()
                     .tonic()
-                    .with_endpoint(otel_exporter),
+                    .with_endpoint(otel_exporter)
+                    .with_timeout(std::time::Duration::from_secs(5)),
             )
             .with_trace_config(
-                opentelemetry::sdk::trace::config()
-                    .with_sampler(opentelemetry::sdk::trace::Sampler::AlwaysOn)
-                    .with_id_generator(opentelemetry::sdk::trace::RandomIdGenerator::default())
-                    .with_resource(opentelemetry::sdk::Resource::new(vec![
+                opentelemetry_sdk::trace::Config::default()
+                    .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn)
+                    .with_id_generator(opentelemetry_sdk::trace::RandomIdGenerator::default())
+                    .with_max_events_per_span(32)
+                    .with_max_attributes_per_event(16)
+                    .with_resource(opentelemetry_sdk::Resource::new(vec![
                         opentelemetry::KeyValue::new("service.name", service_name.to_string()),
                     ])),
             )
             .with_batch_config(
-                opentelemetry::sdk::trace::BatchConfig::default()
-                    .with_scheduled_delay(std::time::Duration::from_secs(10)),
+                opentelemetry_sdk::trace::BatchConfigBuilder::default()
+                    .with_scheduled_delay(std::time::Duration::from_secs(10))
+                    .build(),
             );
 
-        #[cfg(debug_assertions)]
-        let tracer = pipeline.install_simple()?;
+        // install_simpleだと動作しない・・・？
+        // #[cfg(debug_assertions)]
+        // let provider = pipeline.install_simple()?;
 
-        #[cfg(not(debug_assertions))]
-        let tracer = pipeline.install_batch(opentelemetry::runtime::Tokio)?;
+        // #[cfg(not(debug_assertions))]
+        let provider = pipeline.install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
-        Some(tracer)
+        opentelemetry::global::set_tracer_provider(provider.clone());
+
+        Some(provider)
     } else {
         None
     };
@@ -102,9 +113,12 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
         let builder = builder.with(sentry_tracing::layer());
 
         // TODO: もっときれいにかけないものか
-        if let Some(tracer) = tracer.clone() {
+        if let Some(provider) = provider.as_ref() {
             builder
-                .with(tracing_opentelemetry::layer().with_tracer(tracer))
+                .with(
+                    tracing_opentelemetry::layer()
+                        .with_tracer(provider.tracer("tracing-otel-subscriber")),
+                )
                 .try_init()?;
         } else {
             builder.try_init()?;
@@ -116,6 +130,6 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
         } else {
             None
         },
-        tracer,
+        provider,
     })
 }
