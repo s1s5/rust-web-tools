@@ -7,21 +7,12 @@ pub async fn run(router: Router, port: Option<u16>) -> anyhow::Result<()> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port.unwrap_or(8000)));
     info!("server listening {:?}", addr);
 
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(addr).await?;
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
-        .await
-        .unwrap();
+        .await?;
+
     info!("server shutdown");
-
-    #[cfg(feature = "with-sentry")]
-    if let Some(client) = sentry::Hub::current().client() {
-        client.close(Some(std::time::Duration::from_secs(2)));
-    }
-
-    #[cfg(feature = "with-opentelemetry")]
-    opentelemetry::global::shutdown_tracer_provider();
-
     Ok(())
 }
 
