@@ -1,5 +1,6 @@
 use opentelemetry::trace::TracerProvider;
 use opentelemetry_otlp::WithExportConfig;
+use tracing::warn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
@@ -38,10 +39,16 @@ impl SetupGuard {
 impl Drop for SetupGuard {
     fn drop(&mut self) {
         self.sentry_guard.take();
-        self.provider.take();
 
         if let Some(client) = sentry::Hub::current().client() {
             client.close(Some(std::time::Duration::from_secs(2)));
+        }
+
+        if let Some(provider) = self.provider.take() {
+            provider.force_flush();
+            if let Err(err) = provider.shutdown() {
+                warn!("otel shtdown error: {err:?}");
+            }
         }
 
         opentelemetry::global::shutdown_tracer_provider();
