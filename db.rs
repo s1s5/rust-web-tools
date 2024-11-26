@@ -13,16 +13,19 @@ pub struct Database<C> {
 }
 
 impl Database<DatabaseConnection> {
+    #[deprecated]
     pub async fn new_from_env() -> Result<DataLoader<Self>> {
-        Ok(DataLoader::new(
-            Self {
-                connection: Arc::new(
-                    sea_orm::Database::connect(std::env::var("DATABASE_URL")?).await?,
-                ),
-            },
-            tokio::task::spawn,
-        ))
+        create_data_loader_from_env().await
     }
+}
+
+pub async fn create_data_loader_from_env() -> Result<DataLoader<Database<DatabaseConnection>>> {
+    Ok(DataLoader::new(
+        Database {
+            connection: Arc::new(sea_orm::Database::connect(std::env::var("DATABASE_URL")?).await?),
+        },
+        tokio::task::spawn,
+    ))
 }
 
 impl<C> Database<C>
