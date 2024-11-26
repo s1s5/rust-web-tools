@@ -59,7 +59,7 @@ pub fn get_db_from_ctx<'a>(ctx: &Context<'a>) -> &'a DatabaseConnection {
 pub fn bulk_update<A>(
     objects: &[A],
     fields: &[<A::Entity as EntityTrait>::Column],
-) -> Result<UpdateMany<A::Entity>>
+) -> UpdateMany<A::Entity>
 where
     A: ActiveModelTrait,
 {
@@ -85,5 +85,5 @@ where
         qs = qs.col_expr(*f, case_statement.into())
     }
 
-    Ok(qs)
+    qs
 }
