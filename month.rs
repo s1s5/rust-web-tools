@@ -26,6 +26,12 @@ pub struct MonthInput {
     pub month: i32,
 }
 
+impl MonthInput {
+    pub fn to_i32(&self) -> i32 {
+        (self.year - 2000) * 12 + self.month - 1
+    }
+}
+
 impl From<MonthInput> for Month {
     fn from(value: MonthInput) -> Self {
         Self {
@@ -50,6 +56,15 @@ mod tests {
         let d = Month::from_i32(m_i32);
         assert_eq!(d.year, 2024);
         assert_eq!(d.month, 10);
+
+        assert_eq!(
+            MonthInput {
+                year: month.year,
+                month: month.month
+            }
+            .to_i32(),
+            month.to_i32()
+        );
 
         Ok(())
     }
