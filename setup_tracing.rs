@@ -4,10 +4,8 @@ use tracing::warn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-#[cfg(all(feature = "with-graphql", feature = "with-sentry"))]
 use super::async_graphql_sentry_extension;
 
-#[cfg(feature = "with-graphql")]
 use async_graphql::SchemaBuilder;
 
 pub struct SetupGuard {
@@ -16,7 +14,6 @@ pub struct SetupGuard {
 }
 
 impl SetupGuard {
-    #[cfg(feature = "with-graphql")]
     pub fn add_extension<Q, M, S>(
         &self,
         schema_builder: SchemaBuilder<Q, M, S>,
@@ -116,7 +113,6 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
             )
             .with(tracing_subscriber::EnvFilter::from_default_env());
 
-        #[cfg(feature = "with-sentry")]
         let builder = builder.with(sentry_tracing::layer());
 
         // TODO: もっときれいにかけないものか

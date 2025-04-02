@@ -14,12 +14,10 @@ pub async fn run(router: Router, port: Option<u16>) -> anyhow::Result<()> {
         .unwrap();
     info!("server shutdown");
 
-    #[cfg(feature = "with-sentry")]
     if let Some(client) = sentry::Hub::current().client() {
         client.close(Some(std::time::Duration::from_secs(2)));
     }
 
-    #[cfg(feature = "with-opentelemetry")]
     opentelemetry::global::shutdown_tracer_provider();
 
     Ok(())
