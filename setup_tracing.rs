@@ -64,15 +64,16 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
             opentelemetry_sdk::propagation::TraceContextPropagator::new(),
         );
 
-        let pipeline = opentelemetry_otlp::new_pipeline()
-            .tracing()
-            .with_exporter(
-                opentelemetry_otlp::new_exporter()
-                    .tonic()
+        let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+            .with_batch_exporter(
+                opentelemetry_otlp::SpanExporter::builder()
+                    .with_tonic()
                     .with_endpoint(otel_exporter)
-                    .with_timeout(std::time::Duration::from_secs(5)),
+                    .with_timeout(std::time::Duration::from_secs(5))
+                    .build()?,
+                    opentelemetry_sdk::runtime::Tokio
             )
-            .with_trace_config(
+            .with_config(
                 opentelemetry_sdk::trace::Config::default()
                     .with_sampler(opentelemetry_sdk::trace::Sampler::AlwaysOn)
                     .with_id_generator(opentelemetry_sdk::trace::RandomIdGenerator::default())
@@ -82,18 +83,19 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
                         opentelemetry::KeyValue::new("service.name", service_name.to_string()),
                     ])),
             )
-            .with_batch_config(
-                opentelemetry_sdk::trace::BatchConfigBuilder::default()
-                    .with_scheduled_delay(std::time::Duration::from_secs(10))
-                    .build(),
-            );
+            // .with_batch_config(
+            //     opentelemetry_sdk::trace::BatchConfigBuilder::default()
+            //         .with_scheduled_delay(std::time::Duration::from_secs(10))
+            //         .build(),
+            // )
+            .build();
 
         // install_simpleだと動作しない・・・？
         // #[cfg(debug_assertions)]
         // let provider = pipeline.install_simple()?;
 
         // #[cfg(not(debug_assertions))]
-        let provider = pipeline.install_batch(opentelemetry_sdk::runtime::Tokio)?;
+        // let provider = pipeline.install_batch(opentelemetry_sdk::runtime::Tokio)?;
 
         opentelemetry::global::set_tracer_provider(provider.clone());
 
