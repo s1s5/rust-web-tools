@@ -71,7 +71,7 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
                     .with_endpoint(otel_exporter)
                     .with_timeout(std::time::Duration::from_secs(5))
                     .build()?,
-                    opentelemetry_sdk::runtime::Tokio
+                opentelemetry_sdk::runtime::Tokio,
             )
             .with_config(
                 opentelemetry_sdk::trace::Config::default()

@@ -1,8 +1,8 @@
 use std::{fmt::Write, sync::Arc};
 
 use async_graphql::{
-    extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute},
     PathSegment, Response,
+    extensions::{Extension, ExtensionContext, ExtensionFactory, NextExecute},
 };
 use opentelemetry::trace::TraceContextExt;
 
