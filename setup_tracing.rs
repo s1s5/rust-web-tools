@@ -24,9 +24,11 @@ impl SetupGuard {
             schema_builder
         };
         if let Some(provider) = self.provider.as_ref() {
-            schema_builder.extension(async_graphql::extensions::OpenTelemetry::new(
-                provider.tracer("graphql"),
-            ))
+            schema_builder.extension(
+                super::async_graphql_extensions_opentelemetry::OpenTelemetry::new(
+                    provider.tracer("graphql"),
+                ),
+            )
         } else {
             schema_builder
         }
