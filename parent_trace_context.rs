@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use axum::{async_trait, extract::FromRequestParts, http::request::Parts, response::Response};
+use axum::{extract::FromRequestParts, http::request::Parts, response::Response};
 const TRACEPARENT_HEADER: &str = "traceparent";
 const TRACESTATE_HEADER: &str = "tracestate";
 
@@ -9,14 +9,11 @@ pub struct ParentTraceContext {
     headers: HashMap<&'static str, Option<String>>,
 }
 
-#[async_trait]
-impl<S> FromRequestParts<S> for ParentTraceContext
-where
-    S: Send + Sync,
-{
-    type Rejection = Response;
-
-    async fn from_request_parts(parts: &mut Parts, _state: &S) -> Result<Self, Self::Rejection> {
+impl ParentTraceContext {
+    async fn from_request_parts_impl<S: Send + Sync>(
+        parts: &mut Parts,
+        _state: &S,
+    ) -> Result<Self, Response> {
         Ok(ParentTraceContext {
             headers: HashMap::from_iter(
                 [
@@ -39,6 +36,20 @@ where
                 .filter(|x| x.1.is_some()),
             ),
         })
+    }
+}
+
+impl<S> FromRequestParts<S> for ParentTraceContext
+where
+    S: Send + Sync,
+{
+    type Rejection = Response;
+
+    fn from_request_parts(
+        parts: &mut Parts,
+        state: &S,
+    ) -> impl Future<Output = Result<Self, Self::Rejection>> + Send {
+        ParentTraceContext::from_request_parts_impl(parts, state).into_future()
     }
 }
 
