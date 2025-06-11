@@ -37,7 +37,7 @@ impl ScalarType for DateTimeRfc3339 {
 
 mod datetime_serializer {
     use chrono::{DateTime, Utc};
-    use serde::{de::Error, Deserialize, Deserializer, Serialize as _, Serializer};
+    use serde::{Deserialize, Deserializer, Serialize as _, Serializer, de::Error};
 
     pub fn serialize<S: Serializer>(
         time: &DateTime<Utc>,

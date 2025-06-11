@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use async_graphql::{registry, InputType, InputValueError, InputValueResult, Value};
+use async_graphql::{InputType, InputValueError, InputValueResult, Value, registry};
 
 pub struct VecForInput<T>(Vec<T>);
 
@@ -29,7 +29,7 @@ impl<T: InputType> InputType for VecForInput<T> {
                 .map_err(InputValueError::propagate)
                 .map(Self),
             value => Ok(Self(vec![
-                InputType::parse(Some(value)).map_err(InputValueError::propagate)?
+                InputType::parse(Some(value)).map_err(InputValueError::propagate)?,
             ])),
         }
     }

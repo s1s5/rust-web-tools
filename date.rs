@@ -31,7 +31,7 @@ impl ScalarType for Date {
 
 mod date_serializer {
     use chrono::NaiveDate;
-    use serde::{de::Error, Deserialize, Deserializer, Serialize as _, Serializer};
+    use serde::{Deserialize, Deserializer, Serialize as _, Serializer, de::Error};
 
     pub fn serialize<S: Serializer>(time: &NaiveDate, serializer: S) -> Result<S::Ok, S::Error> {
         time.to_string().serialize(serializer)
