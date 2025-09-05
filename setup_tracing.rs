@@ -110,10 +110,14 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
         let builder = tracing_subscriber::registry()
             .with(
                 tracing_subscriber::fmt::Layer::new()
+                    .json()
                     .with_ansi(true)
                     .with_file(true)
                     .with_line_number(true)
-                    .with_level(true),
+                    .with_level(true)
+                    .with_current_span(true)
+                    .with_span_list(false)
+                    .flatten_event(true)
             )
             .with(tracing_subscriber::EnvFilter::from_default_env());
 
