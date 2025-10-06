@@ -1,40 +1,12 @@
-use std::collections::HashMap;
-
 use opentelemetry::trace::TracerProvider;
-use opentelemetry_otlp::{WithExportConfig, WithHttpConfig};
+use opentelemetry_otlp::WithExportConfig;
 use tracing::warn;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-use super::async_graphql_sentry_extension;
-
-use async_graphql::SchemaBuilder;
-
 pub struct SetupGuard {
-    sentry_guard: Option<sentry::ClientInitGuard>,
-    provider: Option<opentelemetry_sdk::trace::TracerProvider>,
-}
-
-impl SetupGuard {
-    pub fn add_extension<Q, M, S>(
-        &self,
-        schema_builder: SchemaBuilder<Q, M, S>,
-    ) -> SchemaBuilder<Q, M, S> {
-        let schema_builder = if self.sentry_guard.is_some() {
-            schema_builder.extension(async_graphql_sentry_extension::Sentry)
-        } else {
-            schema_builder
-        };
-        if let Some(provider) = self.provider.as_ref() {
-            schema_builder.extension(
-                super::async_graphql_extensions_opentelemetry::OpenTelemetry::new(
-                    provider.tracer("graphql"),
-                ),
-            )
-        } else {
-            schema_builder
-        }
-    }
+    pub sentry_guard: Option<sentry::ClientInitGuard>,
+    pub provider: Option<opentelemetry_sdk::trace::TracerProvider>,
 }
 
 impl Drop for SetupGuard {
