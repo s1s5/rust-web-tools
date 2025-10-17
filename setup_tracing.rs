@@ -117,7 +117,7 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
                     .with_level(true)
                     .with_current_span(true)
                     .with_span_list(false)
-                    .flatten_event(true)
+                    .flatten_event(true),
             )
             .with(tracing_subscriber::EnvFilter::from_default_env());
 
