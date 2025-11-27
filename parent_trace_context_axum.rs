@@ -56,8 +56,16 @@ where
 impl From<ParentTraceContextAxum> for ParentTraceContext {
     fn from(value: ParentTraceContextAxum) -> Self {
         ParentTraceContext::new(
-            value.headers.get(TRACEPARENT_HEADER).cloned().unwrap_or_default(),
-            value.headers.get(TRACESTATE_HEADER).cloned().unwrap_or_default(),
+            value
+                .headers
+                .get(TRACEPARENT_HEADER)
+                .cloned()
+                .unwrap_or_default(),
+            value
+                .headers
+                .get(TRACESTATE_HEADER)
+                .cloned()
+                .unwrap_or_default(),
         )
     }
 }
