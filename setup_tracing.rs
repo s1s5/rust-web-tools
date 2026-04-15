@@ -90,6 +90,18 @@ pub fn setup() -> anyhow::Result<SetupGuard> {
     };
 
     {
+        #[cfg(debug_assertions)]
+        let builder = tracing_subscriber::registry()
+            .with(
+                tracing_subscriber::fmt::Layer::new()
+                    .compact()
+                    .with_file(true)
+                    .with_line_number(true)
+                    .with_level(true),
+            )
+            .with(tracing_subscriber::EnvFilter::from_default_env());
+
+        #[cfg(not(debug_assertions))]
         let builder = tracing_subscriber::registry()
             .with(
                 tracing_subscriber::fmt::Layer::new()
